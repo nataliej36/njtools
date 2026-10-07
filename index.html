@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Natalie's Tools</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#F7F4EF">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Tools">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F4EF;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE8;
+    --ink: #1C1917;
+    --ink2: #6B6560;
+    --ink3: #A09B96;
+    --accent: #7C6B5A;
+    --accent-light: #EDE8E2;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+  .app { max-width: 480px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-family: 'DM Serif Display', serif; font-size: 28px; font-weight: 400; letter-spacing: -0.3px; line-height: 1.2; }
+  .header { margin-bottom: 28px; }
+  .header .date-line { font-size: 13px; color: var(--ink3); margin-bottom: 8px; }
+
+  .tool-list { display: flex; flex-direction: column; gap: 10px; }
+  .tool-card { display: flex; align-items: center; gap: 14px; background: var(--surface); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); text-decoration: none; color: inherit; transition: transform 0.15s, box-shadow 0.15s; }
+  .tool-card:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.09); }
+  .tool-icon { font-size: 26px; width: 40px; text-align: center; flex-shrink: 0; }
+  .tool-name { font-family: 'DM Serif Display', serif; font-size: 17px; margin-bottom: 2px; }
+  .tool-desc { font-size: 12.5px; color: var(--ink3); line-height: 1.4; }
+  .tool-arrow { margin-left: auto; color: var(--ink3); font-size: 18px; }
+
+  .empty-note { text-align: center; color: var(--ink3); font-size: 13px; padding: 30px 10px; }
+
+  .offline-pill { display: none; align-items: center; gap: 6px; font-size: 12px; color: var(--ink2); background: var(--accent-light); border-radius: 99px; padding: 6px 12px; margin-bottom: 18px; width: fit-content; }
+  .offline-pill.show { display: flex; }
+  .offline-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+  .install-hint { margin-top: 28px; font-size: 12px; color: var(--ink3); line-height: 1.6; text-align: center; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="date-line" id="date-line"></div>
+    <h1>Your tools.</h1>
+  </div>
+
+  <div class="offline-pill" id="offline-pill"><span class="offline-dot"></span> Offline — showing cached version</div>
+
+  <div class="tool-list" id="tool-list"></div>
+
+  <div class="install-hint">Installed from here, both tools open full-screen with no browser bar — and keep working offline.</div>
+</div>
+
+<script>
+// ── TOOL REGISTRY ────────────────────────────────────────────────────
+// Add a new tool here and it appears on the menu and gets offline-cached
+// automatically the first time it's opened (sw.js caches on first visit).
+const tools = [
+  { href: 'cbt-tool.html',      icon: '🫀', name: 'In the Moment',   desc: 'CBT checklists for self-erasure, self-esteem, perfectionism, anxiety and low mood' },
+  { href: 'movement-tool.html', icon: '🌙', name: "Tonight's Move",  desc: 'Rotating 20–30 min strength and stretch sessions, plus a weekly gym log' }
+];
+
+function renderTools() {
+  const el = document.getElementById('tool-list');
+  if (!tools.length) {
+    el.innerHTML = '<div class="empty-note">No tools yet.</div>';
+    return;
+  }
+  el.innerHTML = tools.map(t => `
+    <a class="tool-card" href="${t.href}">
+      <div class="tool-icon">${t.icon}</div>
+      <div>
+        <div class="tool-name">${t.name}</div>
+        <div class="tool-desc">${t.desc}</div>
+      </div>
+      <div class="tool-arrow">›</div>
+    </a>`).join('');
+}
+renderTools();
+
+const d = new Date();
+const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+document.getElementById('date-line').textContent = days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()];
+
+document.getElementById('offline-pill').classList.toggle('show', !navigator.onLine);
+window.addEventListener('online',  () => document.getElementById('offline-pill').classList.remove('show'));
+window.addEventListener('offline', () => document.getElementById('offline-pill').classList.add('show'));
+
+// ── SERVICE WORKER ───────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
