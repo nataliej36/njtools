@@ -1,6 +1,6 @@
 // Bump this version string whenever any cached file changes, or the old
 // cached version will keep being served instead of your update.
-const CACHE_NAME = 'ntools-v9';
+const CACHE_NAME = 'ntools-v10';
 
 const PRECACHE_URLS = [
   './',
@@ -29,23 +29,24 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Cache-first for same-origin requests, falling back to network — and
-// quietly caching whatever the network returns, so a new tool page added
-// later gets cached the first time it's opened, without editing this file.
+// Network-first for same-origin requests: always try to get the latest
+// version first, and only fall back to whatever's cached if the network
+// request fails (i.e. offline). This is the opposite of cache-first on
+// purpose — this app changes often, so "always fresh when online" matters
+// more than shaving a few ms off load time. Whatever the network returns
+// gets cached as the new offline fallback, so a new tool page added later
+// gets cached the first time it's opened, without editing this file.
 self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
 
   event.respondWith(
-    caches.match(req).then(cached => {
-      if (cached) return cached;
-      return fetch(req).then(res => {
-        if (res.ok) {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-        }
-        return res;
-      }).catch(() => cached);
-    })
+    fetch(req).then(res => {
+      if (res.ok) {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+      }
+      return res;
+    }).catch(() => caches.match(req))
   );
 });
