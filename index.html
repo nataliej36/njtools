@@ -109,6 +109,16 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
+  // A new service worker version only takes over in the background --
+  // it doesn't re-fetch what's already on screen. Reload once it does,
+  // so a fresh install actually shows the update instead of needing the
+  // app closed and reopened twice.
+  let swRefreshed = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (swRefreshed) return;
+    swRefreshed = true;
+    window.location.reload();
+  });
 }
 </script>
 </body>

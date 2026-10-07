@@ -559,6 +559,17 @@ function startOver() {
   init();
   goTo(1);
 }
+
+// Reload once a new service worker (registered from index.html) takes
+// control, so an update actually shows up here without a double reopen.
+if ('serviceWorker' in navigator) {
+  let swRefreshed = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (swRefreshed) return;
+    swRefreshed = true;
+    window.location.reload();
+  });
+}
 </script>
 </body>
 </html>
