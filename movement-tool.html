@@ -169,7 +169,12 @@ const sessions = {
     short: 'Dumbbells + band · ~22 min',
     note: 'Two light rounds. The dumbbells are 2kg — that\'s plenty. This is about showing up consistently, not lifting heavy.',
     sections: [
-      { label: 'Two rounds through', items: [
+      { label: 'Hip warm-up (always include, ~2 min)', items: [
+        { text: 'Sumo-to-lunge', sub: 'x8 each side — sumo squat, shift your weight and step into a lunge on one side, back to sumo, repeat other side' },
+        { text: 'Standing hip dips', sub: 'x10 each side — standing tall, drop one hip down and lift back level, controlled' },
+        { text: 'Standing hip openers', sub: 'x8 each side — lift your knee up and rotate it out to the side like opening a gate, return' }
+      ]},
+      { label: 'Two rounds through', filterable: true, items: [
         { text: 'Sumo squats', sub: 'x12 — hold a dumbbell at your chest if you like', star: true },
         { text: 'Bicep curl to shoulder press', sub: 'x12, both dumbbells' },
         { text: 'Glute bridges', sub: 'x15 — band just above the knees if you have one out', star: true },
@@ -190,7 +195,12 @@ const sessions = {
     short: 'Resistance band · ~20 min',
     note: 'Mostly floor-based. Good one for a tired evening where standing up for a full session doesn\'t appeal.',
     sections: [
-      { label: 'Two rounds through', items: [
+      { label: 'Hip warm-up (always include, ~2 min)', items: [
+        { text: 'Sumo-to-lunge', sub: 'x8 each side — sumo squat, shift your weight and step into a lunge on one side, back to sumo, repeat other side' },
+        { text: 'Standing hip dips', sub: 'x10 each side — standing tall, drop one hip down and lift back level, controlled' },
+        { text: 'Standing hip openers', sub: 'x8 each side — lift your knee up and rotate it out to the side like opening a gate, return' }
+      ]},
+      { label: 'Two rounds through', filterable: true, items: [
         { text: 'Glute bridges', sub: 'x15', star: true },
         { text: 'Single-leg glute bridges', sub: 'x8 each side' },
         { text: 'Clamshells', sub: 'x12 each side — band above the knees', star: true },
@@ -210,7 +220,7 @@ const sessions = {
     short: 'Mat only · ~20 min',
     note: 'A shorter strength block, then a proper long stretch at the end. Swap the stretch section for a 10-minute Yoga with Adriene video any time — that counts fully.',
     sections: [
-      { label: 'Two rounds through', items: [
+      { label: 'Two rounds through', filterable: true, items: [
         { text: 'Plank', sub: '30 seconds minimum — add 5–10 seconds once that feels steady. Knees down still counts as a full rep.', star: true },
         { text: 'Bird-dog', sub: 'x10 each side' },
         { text: 'Lateral leg lifts', sub: 'x12 each side, lying down — slow and controlled, pause at the top' },
@@ -377,7 +387,7 @@ function buildSessionScreen() {
     section.items.forEach((item, ii) => {
       const id = `ci-${si}-${ii}`;
       const star = item.star ? ' <span class="check-star">★</span>' : '';
-      const hideCls = (miniMode && !item.star) ? ' hidden-mini' : '';
+      const hideCls = (section.filterable && miniMode && !item.star) ? ' hidden-mini' : '';
       html += `<div class="check-item${hideCls}" id="${id}" data-star="${!!item.star}" onclick="toggleCheck('${id}')">
         <div class="check-box"></div>
         <div><div class="check-text">${item.text}${star}</div><div class="check-sub">${item.sub}</div></div>
