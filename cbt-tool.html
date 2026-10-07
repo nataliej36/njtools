@@ -45,12 +45,6 @@
   .header { margin-bottom: 24px; }
   .header .date-line { font-size: 13px; color: var(--ink3); margin-bottom: 8px; }
 
-  /* Cycle context banner */
-  .cycle-banner { border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-  .cycle-banner .cb-day { font-family: 'DM Serif Display', serif; font-size: 18px; font-weight: 400; }
-  .cycle-banner .cb-phase { color: var(--ink2); }
-  .cycle-banner .cb-none { color: var(--ink3); font-style: italic; }
-
   /* Pattern selector */
   .pattern-grid { display: flex; flex-direction: column; gap: 10px; }
   .pattern-btn { border: 1.5px solid var(--surface2); border-radius: var(--radius); padding: 14px 16px; cursor: pointer; text-align: left; background: var(--surface); transition: all 0.18s ease; display: flex; align-items: center; gap: 12px; }
@@ -120,7 +114,6 @@
 
   .alert { border-radius: var(--radius-sm); padding: 11px 14px; font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
   .alert-warning { background: #FEF9EE; border: 1px solid #F5D98A; color: #7A5C1A; }
-  .alert-purple { background: #F4F1F9; border: 1px solid #C5B8E8; color: #4A3875; }
 </style>
 </head>
 <body>
@@ -133,8 +126,6 @@
       <h1>In the moment.</h1>
       <p style="color:var(--ink2); margin-top:6px; font-size:14px;">What's happening right now?</p>
     </div>
-
-    <div id="cycle-context-banner"></div>
 
     <div class="progress-dots">
       <div class="prog-dot current"></div>
@@ -172,8 +163,6 @@
       <div class="date-line" id="date-line-2"></div>
       <h1>A little context.</h1>
     </div>
-
-    <div id="cycle-context-banner-2"></div>
 
     <div class="progress-dots">
       <div class="prog-dot done"></div>
@@ -232,66 +221,11 @@ const appState = {
   pattern: null,
   intensity: null,
   trigger: null,
-  context: null,
-  cycleDay: null,
-  phaseName: null,
-  phaseKey: null
+  context: null
 };
 
 let checkItemCount = 0;
 const LOG_KEY = 'cbt_log';
-
-// ── CYCLE CONTEXT ────────────────────────────────────────────────────
-const phaseNames = {
-  menstrual: 'Menstruation',
-  earlyF_vulnerable: 'Early follicular — vulnerable window',
-  earlyF: 'Early follicular',
-  midF: 'Mid follicular',
-  ovulation: 'Early luteal / post-ovulation',
-  luteal: 'Late luteal'
-};
-
-const phaseColors = {
-  menstrual: '#C06B6B', earlyF_vulnerable: '#8B7BAB', earlyF: '#8B7BAB',
-  midF: '#5A8A6A', ovulation: '#4A7FA5', luteal: '#C4956A'
-};
-
-const phaseBgs = {
-  menstrual: '#FDF0F0', earlyF_vulnerable: '#F4F1F9', earlyF: '#F4F1F9',
-  midF: '#EFF5F1', ovulation: '#EEF4F9', luteal: '#FDF5EE'
-};
-
-function loadCycleContext() {
-  try {
-    const raw = localStorage.getItem('cycleguide_day');
-    if (!raw) return null;
-    const payload = JSON.parse(raw);
-    const today = todayKey();
-    if (payload.date !== today) return null;
-    return payload.state;
-  } catch(e) { return null; }
-}
-
-function renderCycleBanner(targetId) {
-  const el = document.getElementById(targetId);
-  if (!el) return;
-  const cs = loadCycleContext();
-  if (cs && cs.cycleDay && cs.phase) {
-    appState.cycleDay = cs.cycleDay;
-    appState.phaseKey = cs.phase;
-    appState.phaseName = phaseNames[cs.phase] || cs.phase;
-    const color = phaseColors[cs.phase] || '#7C6B5A';
-    const bg = phaseBgs[cs.phase] || '#F5F0EB';
-    el.innerHTML = `<div class="cycle-banner" style="background:${bg}; border:1px solid ${color}33;">
-      <span style="color:${color}" class="cb-day">Day ${cs.cycleDay}</span>
-      <span class="cb-phase" style="color:${color}">${appState.phaseName}</span>
-    </div>`;
-  } else {
-    el.innerHTML = `<div class="cycle-banner" style="background:var(--surface2);">
-      <span class="cb-none">Open the Daily Guide first to import your cycle context</span>
-    </div>`;
-  }
-}
 
 // ── INIT ─────────────────────────────────────────────────────────────
 function init() {
@@ -301,8 +235,6 @@ function init() {
   const str = days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()];
   document.getElementById('date-line').textContent = str;
   document.getElementById('date-line-2').textContent = str;
-  renderCycleBanner('cycle-context-banner');
-  renderCycleBanner('cycle-context-banner-2');
 }
 init();
 
@@ -502,23 +434,16 @@ const patterns = {
 function buildChecklist() {
   checkItemCount = 0;
   const p = patterns[appState.pattern];
-  const isVulnerable = appState.phaseKey === 'earlyF_vulnerable';
-  const isLuteal = appState.phaseKey === 'luteal';
   const isStrong = appState.intensity === 'strong';
 
   let html = '<div class="fade-in">';
 
   // Pattern banner
   html += `<div class="pattern-banner" style="background:${p.bg}; border:1.5px solid ${p.color}44;">
-    <div class="pb-label" style="color:${p.color}">${appState.phaseName ? 'Day ' + appState.cycleDay + ' · ' + appState.phaseName : 'In the moment'}</div>
+    <div class="pb-label" style="color:${p.color}">In the moment</div>
     <div class="pb-title" style="color:${p.color}">${p.name}</div>
     <div class="pb-note" style="color:${p.color}">${p.note}</div>
   </div>`;
-
-  // Cycle phase alert if vulnerable
-  if (isVulnerable || isLuteal) {
-    html += `<div class="alert alert-purple">You're in your ${isVulnerable ? 'days 5–7 vulnerable window' : 'late luteal phase'}. This amplifies ${appState.pattern === 'anxiety' ? 'anxiety sensitivity' : appState.pattern === 'esteem' ? 'the self-esteem dip' : 'emotional reactivity'} neurobiologically. Name that as a cause — it doesn't make this less real, but it gives it a known end point.</div>`;
-  }
 
   // Intensity alert
   if (isStrong) {
@@ -590,11 +515,6 @@ function exportEntry() {
   lines.push('  Intensity: ' + (intensityMap[appState.intensity] || '—'));
   lines.push('  Trigger: ' + (triggerMap[appState.trigger] || '—'));
   lines.push('  Where: ' + (contextMap[appState.context] || '—'));
-  if (appState.cycleDay) {
-    lines.push('');
-    lines.push('CYCLE CONTEXT');
-    lines.push('  Day ' + appState.cycleDay + ' — ' + (appState.phaseName || '—'));
-  }
   lines.push('');
   lines.push('PHRASE USED');
   lines.push('  ' + p.phrase);
@@ -625,7 +545,7 @@ function exportEntry() {
   // Save to log
   try {
     const existing = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
-    existing.push({ date: todayKey(), time: timeStr, pattern: appState.pattern, intensity: appState.intensity, cycleDay: appState.cycleDay, phase: appState.phaseKey, ticked, unticked });
+    existing.push({ date: todayKey(), time: timeStr, pattern: appState.pattern, intensity: appState.intensity, ticked, unticked });
     localStorage.setItem(LOG_KEY, JSON.stringify(existing.slice(-50)));
   } catch(e) {}
 }
