@@ -1,6 +1,6 @@
 // Bump this version string whenever any cached file changes, or the old
 // cached version will keep being served instead of your update.
-const CACHE_NAME = 'ntools-v2';
+const CACHE_NAME = 'ntools-v3';
 
 const PRECACHE_URLS = [
   './',
