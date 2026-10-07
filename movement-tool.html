@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tonight's Move</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F4EF;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE8;
+    --ink: #1C1917;
+    --ink2: #6B6560;
+    --ink3: #A09B96;
+    --accent: #7C6B5A;
+    --accent-light: #EDE8E2;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+
+    /* Session colours */
+    --full: #4A7FA5;    --full-bg: #EEF4F9;
+    --lower: #8B7BAB;   --lower-bg: #F4F1F9;
+    --core: #5A8A6A;    --core-bg: #EFF5F1;
+    --gentle: #C4956A;  --gentle-bg: #FDF5EE;
+    --gym: #7C6B5A;     --gym-bg: #F5F0EB;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+  .app { max-width: 480px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-family: 'DM Serif Display', serif; font-size: 26px; font-weight: 400; letter-spacing: -0.3px; line-height: 1.2; }
+  h2 { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--ink3); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 500; }
+  .card { background: var(--surface); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 12px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .header { margin-bottom: 20px; }
+  .header .date-line { font-size: 13px; color: var(--ink3); margin-bottom: 8px; }
+
+  .cycle-banner { border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .cycle-banner .cb-day { font-family: 'DM Serif Display', serif; font-size: 18px; font-weight: 400; }
+  .cycle-banner .cb-phase { color: var(--ink2); }
+  .cycle-banner .cb-none { color: var(--ink3); font-style: italic; }
+
+  /* Weekly dots */
+  .week-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .week-dots { display: flex; gap: 8px; }
+  .week-dot { width: 26px; height: 26px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--ink3); border: 1.5px solid transparent; }
+  .week-dot.done { background: var(--core); color: #fff; }
+  .week-dot.gym { border: 2px solid var(--gym); }
+  .week-dot.today { border: 1.5px solid var(--ink); }
+  .week-caption { font-size: 12px; color: var(--ink3); margin-bottom: 20px; }
+
+  /* Suggestion card */
+  .suggest-card { border-radius: var(--radius); padding: 18px; margin-bottom: 14px; border: 1.5px solid; }
+  .suggest-label { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 6px; opacity: 0.75; }
+  .suggest-title { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 6px; }
+  .suggest-desc { font-size: 13px; opacity: 0.85; line-height: 1.5; margin-bottom: 14px; }
+  .alert { border-radius: var(--radius-sm); padding: 11px 14px; font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+  .alert-purple { background: #F4F1F9; border: 1px solid #C5B8E8; color: #4A3875; }
+
+  .other-sessions { margin-top: 6px; }
+  .other-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink3); margin: 16px 0 8px; padding: 0 2px; }
+  .session-pick { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--surface); border: 1.5px solid var(--surface2); border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
+  .session-pick:hover { border-color: var(--accent); }
+  .session-pick .sp-icon { font-size: 18px; width: 26px; text-align: center; }
+  .session-pick .sp-name { font-size: 14px; font-weight: 500; }
+  .session-pick .sp-sub { font-size: 12px; color: var(--ink3); }
+
+  .gym-card { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--gym-bg); border-radius: var(--radius-sm); border: 1.5px solid #7C6B5A33; margin-top: 16px; }
+  .gym-card .gc-text { font-size: 13px; }
+  .gym-card .gc-title { font-weight: 500; margin-bottom: 2px; }
+  .gym-card .gc-sub { color: var(--ink2); font-size: 12px; }
+  .gym-card.logged { opacity: 0.6; }
+
+  /* Checklist */
+  .pattern-banner { border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px; }
+  .pattern-banner .pb-label { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 4px; opacity: 0.7; }
+  .pattern-banner .pb-title { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; margin-bottom: 6px; }
+  .pattern-banner .pb-note { font-size: 13px; opacity: 0.85; line-height: 1.5; }
+
+  .checklist-section { margin-bottom: 10px; }
+  .section-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink3); margin-bottom: 8px; padding: 0 4px; }
+
+  .check-item { display: flex; gap: 12px; align-items: flex-start; padding: 11px 14px; background: var(--surface); border-radius: var(--radius-sm); margin-bottom: 6px; cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
+  .check-item:hover { border-color: var(--surface2); }
+  .check-item.done { background: var(--surface2); }
+  .check-item.hidden-mini { display: none; }
+  .check-box { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--surface2); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.18s; background: var(--surface); }
+  .check-item.done .check-box { background: var(--accent); border-color: var(--accent); }
+  .check-item.done .check-box::after { content: ''; display: block; width: 5px; height: 9px; border: 2px solid #fff; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px,-1px); }
+  .check-text { font-size: 14px; line-height: 1.5; flex: 1; }
+  .check-star { color: var(--gentle); margin-left: 4px; }
+  .check-sub { font-size: 12px; color: var(--ink3); margin-top: 3px; line-height: 1.4; }
+  .check-item.done .check-text { color: var(--ink3); text-decoration: line-through; text-decoration-color: var(--ink3); }
+  .check-item.done .check-sub { opacity: 0.5; }
+
+  .mini-toggle { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--accent-light); border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 13px; }
+  .mini-toggle button { border: none; background: var(--accent); color: #fff; border-radius: 99px; padding: 6px 14px; font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+  .mini-toggle button.off { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+
+  .btn-primary { background: var(--ink); color: #fff; border: none; border-radius: 99px; padding: 14px 32px; font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; width: 100%; transition: opacity 0.15s, transform 0.12s; margin-top: 8px; }
+  .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--ink2); border: 1.5px solid var(--surface2); border-radius: 99px; padding: 10px 24px; font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--ink); }
+  .btn-export { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); border-radius: 99px; padding: 10px 24px; font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s; }
+  .btn-export:hover { background: var(--accent-light); }
+  .footer-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; padding-top: 4px; }
+
+  .fade-in { animation: fadeIn 0.35s ease forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Done screen */
+  .done-wrap { text-align: center; padding: 30px 10px; }
+  .done-icon { font-size: 40px; margin-bottom: 14px; }
+  .done-msg { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 10px; line-height: 1.3; }
+  .done-sub { font-size: 13px; color: var(--ink2); margin-bottom: 26px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SCREEN 1: Home -->
+  <div class="screen active" id="screen-home">
+    <div class="header">
+      <div class="date-line" id="date-line"></div>
+      <h1>Tonight's move.</h1>
+      <p style="color:var(--ink2); margin-top:6px; font-size:14px;">20–30 minutes, whatever you've got left.</p>
+    </div>
+
+    <div id="cycle-context-banner"></div>
+
+    <div class="week-row">
+      <div class="week-dots" id="week-dots"></div>
+    </div>
+    <div class="week-caption" id="week-caption"></div>
+
+    <div id="suggestion-area"></div>
+
+    <div class="other-label">Or pick something else</div>
+    <div id="other-sessions"></div>
+
+    <div id="gym-area"></div>
+  </div>
+
+  <!-- SCREEN 2: Session checklist -->
+  <div class="screen" id="screen-session">
+    <div id="session-content" class="fade-in"></div>
+  </div>
+
+  <!-- SCREEN 3: Done -->
+  <div class="screen" id="screen-done">
+    <div id="done-content" class="fade-in"></div>
+  </div>
+
+</div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────────
+const LOG_KEY = 'movement_log';
+const ROT_KEY = 'movement_rotation_index';
+let currentSession = null;
+let miniMode = false;
+
+const phaseNames = {
+  menstrual: 'Menstruation',
+  earlyF_vulnerable: 'Early follicular — vulnerable window',
+  earlyF: 'Early follicular',
+  midF: 'Mid follicular',
+  ovulation: 'Early luteal / post-ovulation',
+  luteal: 'Late luteal'
+};
+const phaseColors = {
+  menstrual: '#C06B6B', earlyF_vulnerable: '#8B7BAB', earlyF: '#8B7BAB',
+  midF: '#5A8A6A', ovulation: '#4A7FA5', luteal: '#C4956A'
+};
+const phaseBgs = {
+  menstrual: '#FDF0F0', earlyF_vulnerable: '#F4F1F9', earlyF: '#F4F1F9',
+  midF: '#EFF5F1', ovulation: '#EEF4F9', luteal: '#FDF5EE'
+};
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function loadCycleContext() {
+  try {
+    const raw = localStorage.getItem('cycleguide_day');
+    if (!raw) return null;
+    const payload = JSON.parse(raw);
+    if (payload.date !== todayKey()) return null;
+    return payload.state;
+  } catch(e) { return null; }
+}
+
+let cyclePhaseKey = null;
+
+function renderCycleBanner() {
+  const el = document.getElementById('cycle-context-banner');
+  const cs = loadCycleContext();
+  if (cs && cs.cycleDay && cs.phase) {
+    cyclePhaseKey = cs.phase;
+    const name = phaseNames[cs.phase] || cs.phase;
+    const color = phaseColors[cs.phase] || '#7C6B5A';
+    const bg = phaseBgs[cs.phase] || '#F5F0EB';
+    el.innerHTML = `<div class="cycle-banner" style="background:${bg}; border:1px solid ${color}33;">
+      <span style="color:${color}" class="cb-day">Day ${cs.cycleDay}</span>
+      <span class="cb-phase" style="color:${color}">${name}</span>
+    </div>`;
+  } else {
+    el.innerHTML = `<div class="cycle-banner" style="background:var(--surface2);">
+      <span class="cb-none">Open the Daily Guide first to import your cycle context</span>
+    </div>`;
+  }
+}
+
+// ── SESSION LIBRARY ──────────────────────────────────────────────────
+const sessions = {
+  full: {
+    key: 'full', name: 'Full-Body Strength', icon: '💪',
+    color: 'var(--full)', bg: 'var(--full-bg)',
+    short: 'Dumbbells + band · ~22 min',
+    note: 'Two light rounds. The dumbbells are 2kg — that\'s plenty. This is about showing up consistently, not lifting heavy.',
+    sections: [
+      { label: 'Two rounds through', items: [
+        { text: 'Sumo squats', sub: 'x12 — hold a dumbbell at your chest if you like', star: true },
+        { text: 'Bicep curl to shoulder press', sub: 'x12, both dumbbells' },
+        { text: 'Glute bridges', sub: 'x15 — band just above the knees if you have one out', star: true },
+        { text: 'Band rows', sub: 'x12 — band under both feet, pull to your ribs' },
+        { text: 'Walking lunges', sub: 'x10 each leg — or reverse lunges if space is tight' },
+        { text: 'Shoulder fly', sub: 'x12, light dumbbells — small range is completely fine', star: true }
+      ]},
+      { label: 'Wind down (always include)', items: [
+        { text: 'Child\'s pose', sub: '30 seconds' },
+        { text: 'Quad stretch', sub: '20 seconds each side' },
+        { text: 'Chest opener', sub: '20 seconds' }
+      ]}
+    ]
+  },
+  lower: {
+    key: 'lower', name: 'Lower Body & Glutes', icon: '🍑',
+    color: 'var(--lower)', bg: 'var(--lower-bg)',
+    short: 'Resistance band · ~20 min',
+    note: 'Mostly floor-based. Good one for a tired evening where standing up for a full session doesn\'t appeal.',
+    sections: [
+      { label: 'Two rounds through', items: [
+        { text: 'Glute bridges', sub: 'x15', star: true },
+        { text: 'Single-leg glute bridges', sub: 'x8 each side' },
+        { text: 'Clamshells', sub: 'x12 each side — band above the knees', star: true },
+        { text: 'Side-lying leg lifts', sub: 'x12 each side', star: true },
+        { text: 'Alternating side lunges', sub: 'x10 each side' },
+        { text: 'Glute kickbacks', sub: 'x12 each side — band around the ankles' }
+      ]},
+      { label: 'Wind down (always include)', items: [
+        { text: 'Figure-4 glute stretch', sub: '30 seconds each side' },
+        { text: 'Forward fold', sub: '30 seconds, knees soft' }
+      ]}
+    ]
+  },
+  core: {
+    key: 'core', name: 'Core & Cosy Stretch', icon: '🌙',
+    color: 'var(--core)', bg: 'var(--core-bg)',
+    short: 'Mat only · ~20 min',
+    note: 'A shorter strength block, then a proper long stretch at the end. Swap the stretch section for a 10-minute Yoga with Adriene video any time — that counts fully.',
+    sections: [
+      { label: 'Two rounds through', items: [
+        { text: 'Plank', sub: '20–30 seconds — knees down is a full rep, not a modification', star: true },
+        { text: 'Bird-dog / Superman', sub: 'x10 each side' },
+        { text: 'Side plank lifts', sub: 'x8 each side, or knee-down version' },
+        { text: 'Dead bug (or ab bikes)', sub: 'x12', star: true },
+        { text: 'Butterfly kicks', sub: 'x10' }
+      ]},
+      { label: 'Long stretch (always include, ~8 min)', items: [
+        { text: 'Cat-cow', sub: '8 slow reps' },
+        { text: 'Child\'s pose', sub: '45 seconds' },
+        { text: 'Seated forward fold', sub: '30 seconds' },
+        { text: 'Seated spinal twist', sub: '20 seconds each side' },
+        { text: 'Legs-up-the-wall', sub: '2–3 minutes — this is the whole point of this session' }
+      ]}
+    ]
+  },
+  gentle: {
+    key: 'gentle', name: 'Gentle Night', icon: '🕯️',
+    color: 'var(--gentle)', bg: 'var(--gentle-bg)',
+    short: 'No equipment · ~10 min',
+    note: 'This is not a lesser session. On a late-luteal or low-energy night, this is the whole point — a body-based signal that the day is winding down.',
+    sections: [
+      { label: 'Just this', items: [
+        { text: 'Child\'s pose', sub: '1 minute' },
+        { text: 'Cat-cow', sub: '8 reps' },
+        { text: 'Seated forward fold', sub: '45 seconds' },
+        { text: 'Figure-4 glute stretch', sub: '30 seconds each side' },
+        { text: 'Legs-up-the-wall with box breathing', sub: '3–5 minutes — in 4, hold 4, out 4, hold 4' }
+      ]}
+    ]
+  }
+};
+const rotationOrder = ['full','lower','core'];
+
+function getRotationIndex() {
+  const v = parseInt(localStorage.getItem(ROT_KEY) || '0', 10);
+  return isNaN(v) ? 0 : v % rotationOrder.length;
+}
+function advanceRotation() {
+  const next = (getRotationIndex() + 1) % rotationOrder.length;
+  localStorage.setItem(ROT_KEY, String(next));
+}
+
+function getLog() {
+  try { return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveLogEntry(entry) {
+  const log = getLog();
+  log.push(entry);
+  localStorage.setItem(LOG_KEY, JSON.stringify(log.slice(-200)));
+}
+
+// ── WEEK VIEW ────────────────────────────────────────────────────────
+function renderWeek() {
+  const log = getLog();
+  const dotsEl = document.getElementById('week-dots');
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    days.push(key);
+  }
+  let movedCount = 0;
+  let gymLoggedThisWeek = false;
+  let html = '';
+  days.forEach(key => {
+    const entries = log.filter(e => e.date === key);
+    const moved = entries.some(e => e.type !== 'gym');
+    const gym = entries.some(e => e.type === 'gym');
+    if (moved) movedCount++;
+    if (gym) gymLoggedThisWeek = true;
+    const isToday = key === todayKey();
+    const cls = ['week-dot'];
+    if (moved) cls.push('done');
+    if (gym) cls.push('gym');
+    if (isToday) cls.push('today');
+    const d = new Date(key);
+    const label = ['S','M','T','W','T','F','S'][d.getDay()];
+    html += `<div class="${cls.join(' ')}" title="${key}">${moved ? '' : label}</div>`;
+  });
+  dotsEl.innerHTML = html;
+  document.getElementById('week-caption').textContent =
+    `${movedCount} of the last 7 days — movement most weeks beats a perfect week.`;
+  window._gymLoggedThisWeek = gymLoggedThisWeek;
+}
+
+// ── HOME SCREEN ──────────────────────────────────────────────────────
+function renderHome() {
+  const d = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('date-line').textContent = days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()];
+
+  renderCycleBanner();
+  renderWeek();
+
+  const vulnerable = cyclePhaseKey === 'earlyF_vulnerable' || cyclePhaseKey === 'luteal';
+  const suggestedKey = vulnerable ? 'gentle' : rotationOrder[getRotationIndex()];
+  const s = sessions[suggestedKey];
+
+  let html = '';
+  if (vulnerable) {
+    html += `<div class="alert alert-purple">${cyclePhaseKey === 'luteal' ? 'Late luteal' : 'Days 5–7 vulnerable window'} — energy and resilience are physiologically lower here. Gentle Night is suggested, but any of the others is fine if you've genuinely got the energy for it.</div>`;
+  }
+  html += `<div class="suggest-card" style="background:${s.bg}; border-color:${s.color}44;">
+    <div class="suggest-label" style="color:${s.color}">Tonight's suggestion</div>
+    <div class="suggest-title" style="color:${s.color}">${s.icon} ${s.name}</div>
+    <div class="suggest-desc" style="color:${s.color}">${s.short}</div>
+    <button class="btn-primary" style="background:${s.color}" onclick="startSession('${s.key}')">Start this</button>
+  </div>`;
+  document.getElementById('suggestion-area').innerHTML = html;
+
+  let otherHtml = '';
+  Object.values(sessions).forEach(sess => {
+    if (sess.key === suggestedKey) return;
+    otherHtml += `<div class="session-pick" onclick="startSession('${sess.key}')">
+      <div class="sp-icon">${sess.icon}</div>
+      <div><div class="sp-name">${sess.name}</div><div class="sp-sub">${sess.short}</div></div>
+    </div>`;
+  });
+  document.getElementById('other-sessions').innerHTML = otherHtml;
+
+  const gymDone = window._gymLoggedThisWeek;
+  document.getElementById('gym-area').innerHTML = `
+    <div class="gym-card ${gymDone ? 'logged' : ''}">
+      <div class="gc-text">
+        <div class="gc-title">${gymDone ? '✓ Gym session logged this week' : 'Gym session this week'}</div>
+        <div class="gc-sub">Incline treadmill walk or recumbent bike, 20–30 min, easy effort. Podcast time, not a test.</div>
+      </div>
+      ${gymDone ? '' : `<button class="btn-ghost" onclick="logGym()">Log it</button>`}
+    </div>`;
+}
+
+function logGym() {
+  saveLogEntry({ date: todayKey(), type: 'gym', time: new Date().toTimeString().slice(0,5) });
+  renderHome();
+}
+
+// ── SESSION SCREEN ───────────────────────────────────────────────────
+function startSession(key) {
+  currentSession = key;
+  miniMode = false;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-session').classList.add('active');
+  window.scrollTo(0, 0);
+  buildSessionScreen();
+}
+
+function buildSessionScreen() {
+  const s = sessions[currentSession];
+  const hasStars = s.sections.some(sec => sec.items.some(i => i.star));
+
+  let html = '<div class="fade-in">';
+  html += `<div class="pattern-banner" style="background:${s.bg}; border:1.5px solid ${s.color}44;">
+    <div class="pb-label" style="color:${s.color}">Tonight</div>
+    <div class="pb-title" style="color:${s.color}">${s.icon} ${s.name}</div>
+    <div class="pb-note" style="color:${s.color}">${s.note}</div>
+  </div>`;
+
+  if (hasStars) {
+    html += `<div class="mini-toggle">
+      <span>Short on time or energy? Just do the ⭐ ones.</span>
+      <button id="mini-btn" class="${miniMode ? '' : 'off'}" onclick="toggleMini()">${miniMode ? 'Showing ⭐ only' : 'Show ⭐ only'}</button>
+    </div>`;
+  }
+
+  s.sections.forEach((section, si) => {
+    html += `<div class="checklist-section"><div class="section-label">${section.label}</div>`;
+    section.items.forEach((item, ii) => {
+      const id = `ci-${si}-${ii}`;
+      const star = item.star ? ' <span class="check-star">★</span>' : '';
+      const hideCls = (miniMode && !item.star) ? ' hidden-mini' : '';
+      html += `<div class="check-item${hideCls}" id="${id}" data-star="${!!item.star}" onclick="toggleCheck('${id}')">
+        <div class="check-box"></div>
+        <div><div class="check-text">${item.text}${star}</div><div class="check-sub">${item.sub}</div></div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  html += `<div class="footer-row">
+    <button class="btn-ghost" onclick="goHome()">Back</button>
+    <button class="btn-primary" style="background:${s.color}" onclick="finishSession()">That's enough for tonight</button>
+  </div></div>`;
+
+  document.getElementById('session-content').innerHTML = html;
+}
+
+function toggleMini() {
+  miniMode = !miniMode;
+  buildSessionScreen();
+}
+
+function toggleCheck(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('done');
+}
+
+function goHome() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-home').classList.add('active');
+  renderHome();
+}
+
+// ── FINISH ───────────────────────────────────────────────────────────
+const doneMessages = [
+  "That's today's movement. Nothing more required.",
+  "Logged. Your body noticed, even if your brain's already onto the next thing.",
+  "Good. That's enough for tonight.",
+  "However much of that you did — it counts. Fully.",
+  "Done. Go be horizontal."
+];
+const gentleMessages = [
+  "This was the right call for tonight.",
+  "Rest is the session, not a failure to do the session.",
+  "Logged. That's exactly what tonight needed."
+];
+
+function finishSession() {
+  const s = sessions[currentSession];
+  const done = document.querySelectorAll('#session-content .check-item.done:not(.hidden-mini)').length;
+  const total = document.querySelectorAll('#session-content .check-item:not(.hidden-mini)').length;
+
+  saveLogEntry({
+    date: todayKey(), type: currentSession, time: new Date().toTimeString().slice(0,5),
+    completed: done, total: total, mini: miniMode,
+    cycleDay: (loadCycleContext() || {}).cycleDay || null, phase: cyclePhaseKey
+  });
+  if (currentSession === 'full' || currentSession === 'lower' || currentSession === 'core') advanceRotation();
+
+  const pool = currentSession === 'gentle' ? gentleMessages : doneMessages;
+  const msg = pool[Math.floor(Math.random() * pool.length)];
+
+  document.querySelectorAll('.screen').forEach(sc => sc.classList.remove('active'));
+  document.getElementById('screen-done').classList.add('active');
+  document.getElementById('done-content').innerHTML = `
+    <div class="done-wrap">
+      <div class="done-icon">${s.icon}</div>
+      <div class="done-msg">${msg}</div>
+      <div class="done-sub">${s.name} — ${done}/${total} marked done${miniMode ? ' (⭐ version)' : ''}</div>
+      <div class="footer-row">
+        <button class="btn-export" onclick="exportEntry()">Export this entry</button>
+        <button class="btn-primary" style="max-width:220px;" onclick="goHome()">Back home</button>
+      </div>
+    </div>`;
+}
+
+function exportEntry() {
+  const log = getLog();
+  const last = log[log.length - 1];
+  if (!last) return;
+  const s = sessions[last.type] || { name: 'Gym' };
+  const d = new Date();
+  const dayName = d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  let lines = [];
+  lines.push("TONIGHT'S MOVE — " + dayName.toUpperCase());
+  lines.push('Time: ' + last.time);
+  lines.push('─'.repeat(40));
+  lines.push('Session: ' + s.name);
+  if (last.total !== undefined) lines.push('Completed: ' + last.completed + '/' + last.total + (last.mini ? ' (mini/⭐ version)' : ''));
+  if (last.cycleDay) lines.push('Cycle: Day ' + last.cycleDay + ' — ' + (phaseNames[last.phase] || last.phase));
+  lines.push('─'.repeat(40));
+
+  const text = lines.join('\n');
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `movement-${last.type}-${last.date}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────
+renderHome();
+</script>
+</body>
+</html>
