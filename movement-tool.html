@@ -132,7 +132,7 @@
 
     <div id="suggestion-area"></div>
 
-    <div class="other-label">Or pick something else</div>
+    <div class="other-label" id="other-label">Or pick something else</div>
     <div id="other-sessions"></div>
 
     <div id="gym-area"></div>
@@ -339,17 +339,30 @@ function renderHome() {
 
   renderWeek();
 
-  const suggestedKey = rotationOrder[getRotationIndex()];
-  const s = sessions[suggestedKey];
+  const todaysSessions = getLog().filter(e => e.date === todayKey() && sessions[e.type]);
+  const doneToday = todaysSessions.length ? sessions[todaysSessions[todaysSessions.length - 1].type] : null;
 
   let html = '';
-  html += `<div class="suggest-card" style="background:${s.bg}; border-color:${s.color}44;">
-    <div class="suggest-label" style="color:${s.color}">Tonight's suggestion</div>
-    <div class="suggest-title" style="color:${s.color}">${s.icon} ${s.name}</div>
-    <div class="suggest-desc" style="color:${s.color}">${s.short}</div>
-    <button class="btn-primary" style="background:${s.color}" onclick="startSession('${s.key}')">Start this</button>
-  </div>`;
+  let suggestedKey = null;
+
+  if (doneToday) {
+    html += `<div class="suggest-card" style="background:${doneToday.bg}; border-color:${doneToday.color}44;">
+      <div class="suggest-label" style="color:${doneToday.color}">Done for today</div>
+      <div class="suggest-title" style="color:${doneToday.color}">${doneToday.icon} ${doneToday.name}</div>
+      <div class="suggest-desc" style="color:${doneToday.color}">Logged earlier — no suggestion until tomorrow. Pick something below only if you genuinely want a second one today.</div>
+    </div>`;
+  } else {
+    suggestedKey = rotationOrder[getRotationIndex()];
+    const s = sessions[suggestedKey];
+    html += `<div class="suggest-card" style="background:${s.bg}; border-color:${s.color}44;">
+      <div class="suggest-label" style="color:${s.color}">Tonight's suggestion</div>
+      <div class="suggest-title" style="color:${s.color}">${s.icon} ${s.name}</div>
+      <div class="suggest-desc" style="color:${s.color}">${s.short}</div>
+      <button class="btn-primary" style="background:${s.color}" onclick="startSession('${s.key}')">Start this</button>
+    </div>`;
+  }
   document.getElementById('suggestion-area').innerHTML = html;
+  document.getElementById('other-label').textContent = doneToday ? 'Pick something else anyway' : 'Or pick something else';
 
   let otherHtml = '';
   Object.values(sessions).forEach(sess => {
