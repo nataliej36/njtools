@@ -40,11 +40,6 @@
   .header { margin-bottom: 20px; }
   .header .date-line { font-size: 13px; color: var(--ink3); margin-bottom: 8px; }
 
-  .cycle-banner { border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
-  .cycle-banner .cb-day { font-family: 'DM Serif Display', serif; font-size: 18px; font-weight: 400; }
-  .cycle-banner .cb-phase { color: var(--ink2); }
-  .cycle-banner .cb-none { color: var(--ink3); font-style: italic; }
-
   /* Weekly dots */
   .week-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
   .week-dots { display: flex; gap: 8px; }
@@ -59,8 +54,6 @@
   .suggest-label { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 6px; opacity: 0.75; }
   .suggest-title { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 6px; }
   .suggest-desc { font-size: 13px; opacity: 0.85; line-height: 1.5; margin-bottom: 14px; }
-  .alert { border-radius: var(--radius-sm); padding: 11px 14px; font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
-  .alert-purple { background: #F4F1F9; border: 1px solid #C5B8E8; color: #4A3875; }
 
   .other-sessions { margin-top: 6px; }
   .other-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink3); margin: 16px 0 8px; padding: 0 2px; }
@@ -131,8 +124,6 @@
       <p style="color:var(--ink2); margin-top:6px; font-size:14px;">20–30 minutes, whatever you've got left.</p>
     </div>
 
-    <div id="cycle-context-banner"></div>
-
     <div class="week-row">
       <div class="week-dots" id="week-dots"></div>
     </div>
@@ -165,57 +156,9 @@ const ROT_KEY = 'movement_rotation_index';
 let currentSession = null;
 let miniMode = false;
 
-const phaseNames = {
-  menstrual: 'Menstruation',
-  earlyF_vulnerable: 'Early follicular — vulnerable window',
-  earlyF: 'Early follicular',
-  midF: 'Mid follicular',
-  ovulation: 'Early luteal / post-ovulation',
-  luteal: 'Late luteal'
-};
-const phaseColors = {
-  menstrual: '#C06B6B', earlyF_vulnerable: '#8B7BAB', earlyF: '#8B7BAB',
-  midF: '#5A8A6A', ovulation: '#4A7FA5', luteal: '#C4956A'
-};
-const phaseBgs = {
-  menstrual: '#FDF0F0', earlyF_vulnerable: '#F4F1F9', earlyF: '#F4F1F9',
-  midF: '#EFF5F1', ovulation: '#EEF4F9', luteal: '#FDF5EE'
-};
-
 function todayKey() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-
-function loadCycleContext() {
-  try {
-    const raw = localStorage.getItem('cycleguide_day');
-    if (!raw) return null;
-    const payload = JSON.parse(raw);
-    if (payload.date !== todayKey()) return null;
-    return payload.state;
-  } catch(e) { return null; }
-}
-
-let cyclePhaseKey = null;
-
-function renderCycleBanner() {
-  const el = document.getElementById('cycle-context-banner');
-  const cs = loadCycleContext();
-  if (cs && cs.cycleDay && cs.phase) {
-    cyclePhaseKey = cs.phase;
-    const name = phaseNames[cs.phase] || cs.phase;
-    const color = phaseColors[cs.phase] || '#7C6B5A';
-    const bg = phaseBgs[cs.phase] || '#F5F0EB';
-    el.innerHTML = `<div class="cycle-banner" style="background:${bg}; border:1px solid ${color}33;">
-      <span style="color:${color}" class="cb-day">Day ${cs.cycleDay}</span>
-      <span class="cb-phase" style="color:${color}">${name}</span>
-    </div>`;
-  } else {
-    el.innerHTML = `<div class="cycle-banner" style="background:var(--surface2);">
-      <span class="cb-none">Open the Daily Guide first to import your cycle context</span>
-    </div>`;
-  }
 }
 
 // ── SESSION LIBRARY ──────────────────────────────────────────────────
@@ -361,17 +304,12 @@ function renderHome() {
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('date-line').textContent = days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()];
 
-  renderCycleBanner();
   renderWeek();
 
-  const vulnerable = cyclePhaseKey === 'earlyF_vulnerable' || cyclePhaseKey === 'luteal';
-  const suggestedKey = vulnerable ? 'gentle' : rotationOrder[getRotationIndex()];
+  const suggestedKey = rotationOrder[getRotationIndex()];
   const s = sessions[suggestedKey];
 
   let html = '';
-  if (vulnerable) {
-    html += `<div class="alert alert-purple">${cyclePhaseKey === 'luteal' ? 'Late luteal' : 'Days 5–7 vulnerable window'} — energy and resilience are physiologically lower here. Gentle Night is suggested, but any of the others is fine if you've genuinely got the energy for it.</div>`;
-  }
   html += `<div class="suggest-card" style="background:${s.bg}; border-color:${s.color}44;">
     <div class="suggest-label" style="color:${s.color}">Tonight's suggestion</div>
     <div class="suggest-title" style="color:${s.color}">${s.icon} ${s.name}</div>
@@ -493,8 +431,7 @@ function finishSession() {
 
   saveLogEntry({
     date: todayKey(), type: currentSession, time: new Date().toTimeString().slice(0,5),
-    completed: done, total: total, mini: miniMode,
-    cycleDay: (loadCycleContext() || {}).cycleDay || null, phase: cyclePhaseKey
+    completed: done, total: total, mini: miniMode
   });
   if (currentSession === 'full' || currentSession === 'lower' || currentSession === 'core') advanceRotation();
 
@@ -529,7 +466,6 @@ function exportEntry() {
   lines.push('─'.repeat(40));
   lines.push('Session: ' + s.name);
   if (last.total !== undefined) lines.push('Completed: ' + last.completed + '/' + last.total + (last.mini ? ' (mini/⭐ version)' : ''));
-  if (last.cycleDay) lines.push('Cycle: Day ' + last.cycleDay + ' — ' + (phaseNames[last.phase] || last.phase));
   lines.push('─'.repeat(40));
 
   const text = lines.join('\n');
