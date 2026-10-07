@@ -24,6 +24,7 @@
     --full: #4A7FA5;    --full-bg: #EEF4F9;
     --lower: #8B7BAB;   --lower-bg: #F4F1F9;
     --core: #5A8A6A;    --core-bg: #EFF5F1;
+    --arms: #B8705E;    --arms-bg: #FBF0ED;
     --gentle: #C4956A;  --gentle-bg: #FDF5EE;
     --gym: #7C6B5A;     --gym-bg: #F5F0EB;
   }
@@ -236,6 +237,24 @@ const sessions = {
       ]}
     ]
   },
+  arms: {
+    key: 'arms', name: 'Arms', icon: '🥊',
+    color: 'var(--arms)', bg: 'var(--arms-bg)',
+    short: 'Dumbbells optional · ~12 min',
+    note: 'Three moves, two rounds. The dumbbells help but your own bodyweight does plenty here too — skip them on a night you don\'t have them to hand.',
+    sections: [
+      { label: 'Two rounds through', filterable: true, items: [
+        { text: 'Around the worlds', sub: 'x10 each direction — light dumbbells or bare hands, arms out to the sides, draw large slow circles', star: true },
+        { text: 'Crossbody punches', sub: 'x20 (x10 each side) — dumbbells optional, alternate punching across your body like a boxer, rotate through your core' },
+        { text: 'Tricep dips', sub: 'x10–12 — off the edge of a chair or sofa, bend your elbows to lower and push back up, no weight needed', star: true }
+      ]},
+      { label: 'Wind down (always include)', items: [
+        { text: 'Overhead tricep stretch', sub: '20 seconds each side' },
+        { text: 'Cross-body shoulder stretch', sub: '20 seconds each side' },
+        { text: 'Wrist and forearm stretch', sub: '20 seconds' }
+      ]}
+    ]
+  },
   gentle: {
     key: 'gentle', name: 'Gentle Night', icon: '🕯️',
     color: 'var(--gentle)', bg: 'var(--gentle-bg)',
@@ -252,7 +271,7 @@ const sessions = {
     ]
   }
 };
-const rotationOrder = ['full','lower','core'];
+const rotationOrder = ['full','lower','core','arms'];
 
 function getRotationIndex() {
   const v = parseInt(localStorage.getItem(ROT_KEY) || '0', 10);
@@ -443,7 +462,7 @@ function finishSession() {
     date: todayKey(), type: currentSession, time: new Date().toTimeString().slice(0,5),
     completed: done, total: total, mini: miniMode
   });
-  if (currentSession === 'full' || currentSession === 'lower' || currentSession === 'core') advanceRotation();
+  if (rotationOrder.includes(currentSession)) advanceRotation();
 
   const pool = currentSession === 'gentle' ? gentleMessages : doneMessages;
   const msg = pool[Math.floor(Math.random() * pool.length)];
