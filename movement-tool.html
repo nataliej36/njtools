@@ -44,8 +44,8 @@
   /* Weekly dots */
   .week-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
   .week-dots { display: flex; gap: 8px; }
-  .week-dot { width: 26px; height: 26px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--ink3); border: 1.5px solid transparent; }
-  .week-dot.done { background: var(--core); color: #fff; }
+  .week-dot { width: 26px; height: 26px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; color: var(--ink3); border: 1.5px solid transparent; }
+  .week-dot.done { font-size: 14px; }
   .week-dot.gym { border: 2px solid var(--gym); }
   .week-dot.today { border: 1.5px solid var(--ink); }
   .week-caption { font-size: 12px; color: var(--ink3); margin-bottom: 20px; }
@@ -307,18 +307,22 @@ function renderWeek() {
   let html = '';
   days.forEach(key => {
     const entries = log.filter(e => e.date === key);
-    const moved = entries.some(e => e.type !== 'gym');
+    const sessionEntries = entries.filter(e => e.type !== 'gym' && sessions[e.type]);
+    const lastSession = sessionEntries.length ? sessions[sessionEntries[sessionEntries.length - 1].type] : null;
     const gym = entries.some(e => e.type === 'gym');
-    if (moved) movedCount++;
+    if (lastSession) movedCount++;
     if (gym) gymLoggedThisWeek = true;
     const isToday = key === todayKey();
     const cls = ['week-dot'];
-    if (moved) cls.push('done');
+    if (lastSession) cls.push('done');
     if (gym) cls.push('gym');
     if (isToday) cls.push('today');
     const d = new Date(key);
     const label = ['S','M','T','W','T','F','S'][d.getDay()];
-    html += `<div class="${cls.join(' ')}" title="${key}">${moved ? '' : label}</div>`;
+    const bg = lastSession ? ` style="background:${lastSession.color}"` : '';
+    const content = lastSession ? lastSession.icon : (gym ? '🚶' : label);
+    const titleBits = [key, lastSession ? lastSession.name : null, gym ? 'Gym' : null].filter(Boolean);
+    html += `<div class="${cls.join(' ')}"${bg} title="${titleBits.join(' — ')}">${content}</div>`;
   });
   dotsEl.innerHTML = html;
   document.getElementById('week-caption').textContent =
